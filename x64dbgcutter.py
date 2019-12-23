@@ -38,10 +38,10 @@ class x64dbgCutter(object):
         )
 
         if new:
+            filename = file_dialog.getSaveFileName()[0]
+        else:
             file_dialog.setFileMode(QtWidgets.QFileDialog.ExistingFile)
             filename = file_dialog.getOpenFileName()[0]
-        else:
-            filename = file_dialog.getSaveFileName()[0]
 
         # Remember the last directory we were in (parsed from a selected file)
         # for the next time the user comes to load coverage files
@@ -54,7 +54,7 @@ class x64dbgCutter(object):
         return filename
 
     def export_db(self):
-        filename = self.file_dialog("Open new file for export")
+        filename = self.file_dialog("Open new file for export", True)
         if not filename:
             return
 
@@ -90,7 +90,7 @@ class x64dbgCutter(object):
             json.dump(db, outfile, indent=1)
 
     def import_db(self):
-        filename = self.file_dialog("Open x64dbg (Uncompressed) JSON database", True)
+        filename = self.file_dialog("Open x64dbg (Uncompressed) JSON database")
         if not filename:
             return
     
