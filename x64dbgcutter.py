@@ -68,7 +68,7 @@ class x64dbgCutter(object):
         # We can only export items from the main binary currently
         module = os.path.basename(cutter.cmdj("ij")["core"]["file"]).lower()
         
-        # r2: {"addr":5368778842,"size":1,"prot":"--x","hw":false,"trace":false,"enabled":true,"data":"","cond":""}
+        # ref: {"addr":5368778842,"size":1,"prot":"--x","hw":false,"trace":false,"enabled":true,"data":"","cond":""}
         db["breakpoints"] = [{
             "address": hex(bp["addr"] - base_addr), # Comment address relative to the base of the module
             "enabled": bp["enabled"], # Whether the breakpoint is enabled
@@ -77,7 +77,7 @@ class x64dbgCutter(object):
         } for bp in cutter.cmdj("dbj")]
         cutter.message("[x64dbg-cutter]: %d breakpoint(s) exported" % len(db["breakpoints"]))
         
-        # r2: {"offset":5368713216,"type":"CCu","name":"[00] -rwx section size 65536 named .textbss"}
+        # ref: {"offset":5368713216,"type":"CCu","name":"[00] -rwx section size 65536 named .textbss"}
         db["comments"] = [{
             "module": module, # The module that the comment is in
             "address": hex(c["offset"] - base_addr), # Comment address relative to the base of the module
@@ -85,6 +85,18 @@ class x64dbgCutter(object):
             "text": c["name"], # Comment text
         } for c in cutter.cmdj("CCj")]
         cutter.message("[x64dbg-cutter]: %d comment(s) exported" % len(db["comments"]))
+
+        # Set flagspace to all before iterating over fj to show all of the flags
+        cutter.cmd("fs *")
+
+        # ref: {"name":"fcn.1400113de","size":5,"offset":5368779742}
+        db["labels"] = [{
+            "module": module, # The module that the label is in
+            "address": hex(label["offset"] - base_addr), # Label address relative to the base of the module
+            "manual": False, # Whether the label was created by the user
+            "text": label["name"], # Label text
+        } for label in cutter.cmdj("fj") if (label["offset"] - base_addr) >= 0]
+        cutter.message("[x64dbg-cutter]: %d labels(s) exported" % len(db["labels"]))
 
         with open(filename, "w") as outfile:
             json.dump(db, outfile, indent=1)
@@ -118,7 +130,7 @@ class x64dbgCutter(object):
             except:
                 cutter.message("[x64dbg-cutter]: " + traceback.format_exc())
         cutter.message("[x64dbg-cutter]: %d/%d breakpoints(s) imported" % (count, len(breakpoints)))
-    
+
         count = 0
         comments = db.get("comments", [])
         for comment in comments:
@@ -133,11 +145,42 @@ class x64dbgCutter(object):
                 cutter.message("[x64dbg-cutter]: " + traceback.format_exc())
         cutter.message("[x64dbg-cutter]: %d/%d comment(s) imported" % (count, len(comments)))
         
+        # Create a new flagspace for x64dbg labels and bookmarks to allow easy removal
+        cutter.cmd("fs x64dbgcutter.labels")
+        count = 0
+        labels = db.get("labels", [])
+        for label in labels:
+            try:
+                if label["module"] != module:
+                    continue
+                address = int(label["address"], 16) + base_addr
+                # Spaces don't show up in flags, use underscore instead
+                text = label["text"].replace(" ", "_")
+                cutter.cmd("f " + text + " @ " + str(address))
+                count += 1
+            except:
+                cutter.message("[x64dbg-cutter]: " + traceback.format_exc())
+        cutter.message("[x64dbg-cutter]: %d/%d label(s) imported" % (count, len(labels)))
+
+        cutter.cmd("fs x64dbgcutter.bookmarks")
+        count = 0
+        bookmarks = db.get("bookmarks", [])
+        for bookmark in bookmarks:
+            try:
+                if bookmark["module"] != module:
+                    continue
+                address = int(bookmark["address"], 16) + base_addr
+                cutter.cmd("f " + "bookmark_" + str(address) + " @ " + str(address))
+                count += 1
+            except:
+                cutter.message("[x64dbg-cutter]: " + traceback.format_exc())
+        cutter.message("[x64dbg-cutter]: %d/%d bookmark(s) imported" % (count, len(bookmarks)))
+
         cutter.message("[x64dbg-cutter]: Done!")
 
 class x64dbgCutterPlugin(cutter.CutterPlugin):
     name = 'x64dbg-cutter'
-    description = 'Import and export x64dbg comments and breakpoints in Cutter'
+    description = 'Import and export x64dbg comments, labels, bookmarks and breakpoints in Cutter'
     version = '1.0'
     author = 'Yossi Zap'
 
