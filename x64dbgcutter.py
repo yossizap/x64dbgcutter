@@ -1,6 +1,6 @@
 import cutter
 
-import os, sqlite3, traceback, json, base64
+import os, traceback, json, base64
 
 import PySide2.QtWidgets as QtWidgets
 
@@ -17,13 +17,16 @@ class x64dbgCutter(object):
         self._last_directory = None
         
     def load(self):
+        plugin_menu = self.main.getMenuByType(cutter.MainWindow.MenuType.Plugins)
+
         action = QtWidgets.QAction("x64dbg - Import database", self.main)
         action.triggered.connect(self.import_db)
-        self.main.addMenuFileAction(action)
-        
+        plugin_menu.addAction(action)
+
         action = QtWidgets.QAction("x64dbg - Export database", self.main)
         action.triggered.connect(self.export_db)
-        self.main.addMenuFileAction(action)
+        plugin_menu.addAction(action)
+
         cutter.message("[w64dbg-cutter] Initialized")
 
     def unload(self):
