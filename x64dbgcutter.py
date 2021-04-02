@@ -65,7 +65,7 @@ class x64dbgCutter(object):
         
         db = {}
         
-        base_addr = cutter.cmdj("evj bin.baddr")[0]["value"]
+        base_addr = cutter.cmdj("elJ bin.baddr")[0]["value"]
         cutter.message("[x64dbg-cutter]: baddr is %d" % base_addr)
         
         # We can only export items from the main binary currently
@@ -116,7 +116,7 @@ class x64dbgCutter(object):
     
         # We can only import symbols for the main binary currently
         module = os.path.basename(cutter.cmdj("ij")["core"]["file"]).lower()
-        base_addr = cutter.cmdj("evj bin.baddr")[0]["value"]
+        base_addr = cutter.cmdj("elJ bin.baddr")[0]["value"]
         
         count = 0
         breakpoints = db.get("breakpoints", [])
