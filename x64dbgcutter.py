@@ -1,6 +1,6 @@
 import cutter
 
-import os, traceback, json, base64
+import os, traceback, json, base64, re
 
 import PySide2.QtWidgets as QtWidgets
 from PySide2.QtCore import QCoreApplication
@@ -10,6 +10,8 @@ BPHARDWARE = 1,
 BPMEMORY = 2,
 BPDLL = 3,
 BPEXCEPTION = 4
+
+X64DBG_FILE_FILTERS = "Database (*.dd64 *.dd32);;All files (*)"
 
 class x64dbgCutter(object):
     def __init__(self, plugin, main):
@@ -36,15 +38,16 @@ class x64dbgCutter(object):
     def file_dialog(self, title, new=False):
         if new:
             filename = QtWidgets.QFileDialog.getSaveFileName(
-                self.main, title, self._last_directory, "Database (*.dd64);;All files (*)")[0]
+                self.main, title, self._last_directory, X64DBG_FILE_FILTERS)[0]
             # Append x64dbg's file prefix to the saved file
             # NOTE: This solution isn't ideal but preferred filename isn't available in
             # PySide's QtFileDialog constructor
-            if ".dd64" not in filename:
-                filename += ".dd64"
+            if not re.findall(".dd(64|32)", filename):
+                bitness = cutter.cmdj("elJ asm.bits")[0]["value"]
+                filename += f".dd{bitness}"
         else:
             filename = QtWidgets.QFileDialog.getOpenFileName(
-                self.main, title, self._last_directory, "Database (*.dd64);;All files (*)")[0]
+                self.main, title, self._last_directory, X64DBG_FILE_FILTERS)[0]
 
 
         # Remember the last directory we were in (parsed from a selected file)
