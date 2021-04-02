@@ -3,6 +3,7 @@ import cutter
 import os, traceback, json, base64
 
 import PySide2.QtWidgets as QtWidgets
+from PySide2.QtCore import QCoreApplication
 
 BPNORMAL = 0,
 BPHARDWARE = 1,
@@ -33,18 +34,18 @@ class x64dbgCutter(object):
         pass
 
     def file_dialog(self, title, new=False):
-        file_dialog = QtWidgets.QFileDialog(
-            self.main,
-            title,
-            self._last_directory,
-            'Databases (*.dd64)'
-        )
-
         if new:
-            filename = file_dialog.getSaveFileName()[0]
+            filename = QtWidgets.QFileDialog.getSaveFileName(
+                self.main, title, self._last_directory, "Database (*.dd64);;All files (*)")[0]
+            # Append x64dbg's file prefix to the saved file
+            # NOTE: This solution isn't ideal but preferred filename isn't available in
+            # PySide's QtFileDialog constructor
+            if ".dd64" not in filename:
+                filename += ".dd64"
         else:
-            file_dialog.setFileMode(QtWidgets.QFileDialog.ExistingFile)
-            filename = file_dialog.getOpenFileName()[0]
+            filename = QtWidgets.QFileDialog.getOpenFileName(
+                self.main, title, self._last_directory, "Database (*.dd64);;All files (*)")[0]
+
 
         # Remember the last directory we were in (parsed from a selected file)
         # for the next time the user comes to load coverage files
